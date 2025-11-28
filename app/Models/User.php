@@ -2,47 +2,70 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
-        'name',
+        'role',
         'email',
         'password',
+        'full_name',
+        'phone',
+        'address',
+        'avatar_url',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
-        'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'role' => 'string',
+    ];
+
+    // Relations
+    public function farmerVerifications()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->hasMany(FarmerVerification::class);
+    }
+
+    public function listings()
+    {
+        return $this->hasMany(Listing::class, 'farmer_id');
+    }
+
+    public function buyerRequests()
+    {
+        return $this->hasMany(RequestModel::class, 'buyer_id');
+    }
+
+    public function farmerRequests()
+    {
+        return $this->hasMany(RequestModel::class, 'farmer_id');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
+
+    public function communityPosts()
+    {
+        return $this->hasMany(CommunityPost::class);
+    }
+
+    public function communityComments()
+    {
+        return $this->hasMany(CommunityComment::class);
+    }
+
+    public function analyticsSales()
+    {
+        return $this->hasMany(AnalyticsSale::class, 'farmer_id');
     }
 }

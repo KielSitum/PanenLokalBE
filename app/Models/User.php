@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
+use App\Models\UserVerificationer;
 
 class User extends Authenticatable
 {
@@ -29,9 +30,8 @@ class User extends Authenticatable
     ];
 
     // Relations
-    public function farmerVerifications()
-    {
-        return $this->hasMany(FarmerVerification::class);
+        public function verification() {
+    return $this->hasOne(UserVerification::class);
     }
 
     public function listings()

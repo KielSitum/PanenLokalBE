@@ -11,9 +11,9 @@ return new class extends Migration {
             $table->enum('role', ['buyer', 'farmer'])->default('buyer');
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('full_name')->nullable();
-            $table->string('phone')->nullable();
-            $table->text('address')->nullable();
+            $table->string('full_name');
+            $table->string('phone');
+            $table->text('address');
             $table->text('avatar_url')->nullable();
             $table->timestamps();
         });

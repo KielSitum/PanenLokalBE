@@ -13,7 +13,10 @@ return new class extends Migration {
             $table->string('password');
             $table->string('full_name');
             $table->string('phone');
-            $table->text('address');
+            $table->string('slogan')->nullable(); 
+            $table->string('latitude')->nullable(); 
+            $table->string('longitude')->nullable(); 
+            $table->text('address')->nullable(); 
             $table->text('avatar_url')->nullable();
             $table->timestamps();
         });

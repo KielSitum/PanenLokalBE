@@ -16,6 +16,12 @@ class Listing extends Model
         'price',
         'stock',
         'category',
+        // Kolom BARU
+        'location',
+        'area',
+        'type',
+        'contact_name',
+        'contact_number',
     ];
 
     public function farmer()

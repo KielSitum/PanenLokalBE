@@ -37,7 +37,7 @@ class ProfileController extends Controller
 
             // Simpan gambar baru
             $path = $request->file('profile_image')->store('avatars', 'public');
-            $avatarUrl = url(Storage::url($path)); // Mendapatkan URL publik
+            $avatarUrl = url(Storage::url($path));
         }
         
         // 3. Update Data User

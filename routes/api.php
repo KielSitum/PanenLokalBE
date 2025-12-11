@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Models\MarketPrice;
 use App\Http\Controllers\UserVerificationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
@@ -22,4 +23,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/verification/submit', [UserVerificationController::class, 'submit']);
     Route::get('/verification/status', [UserVerificationController::class, 'status']);
     Route::post('/profile/update', [ProfileController::class, 'update']);
+});
+
+Route::get('/market-prices', function () {
+    return \App\Models\MarketPrice::orderBy('commodity')->get();
 });

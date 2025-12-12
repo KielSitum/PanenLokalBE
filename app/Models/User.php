@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
-use App\Models\UserVerificationer;
+use App\Models\UserVerification;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -28,15 +28,25 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
     ];
+    
+    // 🔥 TAMBAH: Agar atribut 'verified' selalu disertakan dalam response API
+    protected $appends = ['verified'];
 
     protected $casts = [
         'role' => 'string',
     ];
 
     // Relations
-        public function verification() {
-    return $this->hasOne(UserVerification::class);
+    public function verification() {
+        return $this->hasOne(UserVerification::class);
     }
+
+    // 🔥 ACCESSOR BARU: Mengecek status verifikasi melalui relasi
+    public function getVerifiedAttribute() {
+        return $this->verification()->where('status', 'verified')->exists();
+    }
+    
+    // ... (Relations lainnya tetap sama)
 
     public function listings()
     {

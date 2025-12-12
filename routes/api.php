@@ -26,8 +26,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile/update', [ProfileController::class, 'update']);
 
     Route::post('/listings', [ListingController::class, 'store']);
+
+    Route::group(['prefix' => 'admin'], function() { 
+        // Note: Cek role Admin harus dilakukan di UserVerificationController.php
+        Route::get('/verifications/pending', [UserVerificationController::class, 'getPendingSubmissions']);
+        Route::post('/verifications/status/{userId}', [UserVerificationController::class, 'updateStatus']);
+    });
 });
 
 Route::get('/market-prices', function () {
     return \App\Models\MarketPrice::orderBy('commodity')->get();
 });
+

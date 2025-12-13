@@ -38,3 +38,13 @@ Route::get('/market-prices', function () {
     return \App\Models\MarketPrice::orderBy('commodity')->get();
 });
 
+Route::get('/listings/active', [ListingController::class, 'getActiveListings']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/listings', [ListingController::class, 'index']);
+    Route::post('/listings', [ListingController::class, 'store']);
+    Route::put('/listings/{id}', [ListingController::class, 'update']);
+    Route::post('/listings/{id}/mark-sold', [ListingController::class, 'markAsSold']);
+    Route::delete('/listings/{id}', [ListingController::class, 'destroy']); // opsional
+});
+

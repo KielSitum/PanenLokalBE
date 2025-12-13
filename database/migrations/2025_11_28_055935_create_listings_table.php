@@ -11,21 +11,13 @@ return new class extends Migration {
             $table->foreignId('farmer_id')->constrained('users')->onDelete('cascade');
             $table->string('title');
             $table->text('description')->nullable();
-            
-            // Kolom yang ditambahkan/diubah
-            $table->text('location')->nullable(); // Alamat lengkap
-            $table->string('area')->nullable(); // Luas lahan (dengan satuan m2)
-            $table->enum('type', ['Timbang', 'Borong'])->default('Timbang'); // Metode penjualan
-            
-            // Harga dan Stok diubah ke unit yang lebih akurat
-            // Akan kita simpan harga per unit (Rp/kg) jika Timbang, atau Total Harga jika Borong.
-            $table->decimal('price', 12, 2); // Harga per Kg (Timbang) / Total Harga (Borong)
-            $table->decimal('stock', 10, 2)->default(0); // Kuantitas dalam Ton
-
-            // Kolom Kontak
+            $table->text('location')->nullable(); 
+            $table->string('area')->nullable();
+            $table->enum('type', ['Timbang', 'Borong'])->default('Timbang'); 
+            $table->decimal('price', 12, 2); 
+            $table->decimal('stock', 10, 2)->default(0);
             $table->string('contact_name')->nullable();
             $table->string('contact_number')->nullable();
-            
             $table->enum('category', ['sayur', 'buah', 'organik'])->nullable();
             $table->timestamps();
         });

@@ -7,6 +7,7 @@ use App\Http\Controllers\UserVerificationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserManagementController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -31,6 +32,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // Note: Cek role Admin harus dilakukan di UserVerificationController.php
         Route::get('/verifications/pending', [UserVerificationController::class, 'getPendingSubmissions']);
         Route::post('/verifications/status/{userId}', [UserVerificationController::class, 'updateStatus']);
+
+        // NEW: User Management Routes
+        Route::get('/users', [UserManagementController::class, 'getAllUsers']);
+        Route::delete('/users/{userId}', [UserManagementController::class, 'deleteUser']);
+        Route::put('/users/{userId}/role', [UserManagementController::class, 'updateUserRole']);
     });
 });
 

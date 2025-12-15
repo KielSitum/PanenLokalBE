@@ -101,11 +101,7 @@ class ListingController extends Controller
                 $images = [];
                 if ($listing->images) {
                     $images = $listing->images->map(function ($image) {
-                        $url = $image->image_url;
-                        if (!str_starts_with($url, 'http')) {
-                            $url = url($image->image_url);
-                        }
-                        return $url;
+                        return url('/api/image/' . basename($image->image_url));
                     })->toArray();
                 }
                 

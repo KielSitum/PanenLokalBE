@@ -17,6 +17,17 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/user', [AuthController::class, 'user'])->middleware('auth:sanctum');
 
+Route::get('/image/{filename}', function ($filename) {
+    $path = storage_path('app/public/listings/' . $filename);
+
+    if (!file_exists($path)) {
+        abort(404);
+    }
+
+    return response()->file($path);
+});
+
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', function (Request $request) {
         return response()->json($request->user());

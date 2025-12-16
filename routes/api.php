@@ -8,6 +8,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\TransactionController; 
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -27,24 +28,23 @@ Route::get('/image/{filename}', function ($filename) {
     return response()->file($path);
 });
 
-
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', function (Request $request) {
         return response()->json($request->user());
     });
-    
     Route::post('/verification/submit', [UserVerificationController::class, 'submit']);
     Route::get('/verification/status', [UserVerificationController::class, 'status']);
     Route::post('/profile/update', [ProfileController::class, 'update']);
 
     Route::post('/listings', [ListingController::class, 'store']);
 
+    // ✅ Transaction Route
+    Route::post('/transactions', [TransactionController::class, 'store']);
+
     Route::group(['prefix' => 'admin'], function() { 
-        // Note: Cek role Admin harus dilakukan di UserVerificationController.php
         Route::get('/verifications/pending', [UserVerificationController::class, 'getPendingSubmissions']);
         Route::post('/verifications/status/{userId}', [UserVerificationController::class, 'updateStatus']);
 
-        // NEW: User Management Routes
         Route::get('/users', [UserManagementController::class, 'getAllUsers']);
         Route::delete('/users/{userId}', [UserManagementController::class, 'deleteUser']);
         Route::put('/users/{userId}/role', [UserManagementController::class, 'updateUserRole']);
@@ -62,6 +62,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/listings', [ListingController::class, 'store']);
     Route::put('/listings/{id}', [ListingController::class, 'update']);
     Route::post('/listings/{id}/mark-sold', [ListingController::class, 'markAsSold']);
-    Route::delete('/listings/{id}', [ListingController::class, 'destroy']); // opsional
+    Route::delete('/listings/{id}', [ListingController::class, 'destroy']);
 });
-

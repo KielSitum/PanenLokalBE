@@ -15,10 +15,12 @@ return new class extends Migration {
             $table->string('phone');
             $table->string('slogan')->nullable(); 
             $table->string('latitude')->nullable(); 
-            $table->string('longitude')->nullable(); 
+            $table->string('longitude')->nullable();
+            $table->string('fcm_token')->nullable(); 
             $table->text('address')->nullable(); 
             $table->text('avatar_url')->nullable();
             $table->timestamps();
+
         });
     }
 

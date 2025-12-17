@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Listing;
 use App\Models\ListingImage;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -12,7 +13,70 @@ use Illuminate\Validation\Rule;
 
 class ListingController extends Controller
 {
-    // 1. CREATE LISTING
+    // 4. MARK AS SOLD - ✅ FIXED VERSION
+    public function markAsSold(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+
+            $validator = Validator::make($request->all(), [
+                'sold_price' => 'required|numeric|min:0'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            $listing = Listing::where('id', $id)
+                ->where('farmer_id', $user->id)
+                ->firstOrFail();
+
+            // ✅ Update listing
+            $listing->update([
+                'is_sold' => true,
+                'sold_price' => $request->sold_price
+            ]);
+
+            // ✅ Update semua transaksi terkait listing ini menjadi success
+            $updatedCount = Transaction::where('listing_id', $id)
+                ->where('status', 'negotiating')
+                ->update([
+                    'status' => 'success',
+                    'completed_at' => now(),
+                ]);
+
+            DB::commit();
+
+            \Log::info("Listing $id marked as sold. Updated $updatedCount transactions to success.");
+
+            return response()->json([
+                'success' => true,
+                'message' => "Listing ditandai sebagai terjual. $updatedCount transaksi diselesaikan.",
+                'data' => $listing->load('images'),
+                'updated_transactions' => $updatedCount
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Mark as sold failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menandai laku: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // ============================================
+    // METHODS LAINNYA TETAP SAMA
+    // ============================================
+
     public function store(Request $request)
     {
         $user = $request->user();
@@ -44,7 +108,7 @@ class ListingController extends Controller
             DB::beginTransaction();
 
             $listing = Listing::create([
-                'farmer_id' => $user->id, // atau 'user_id' sesuai struktur tabel
+                'farmer_id' => $user->id,
                 'title' => $request->title,
                 'location' => $request->location,
                 'area' => $request->area,
@@ -57,7 +121,6 @@ class ListingController extends Controller
                 'description' => $request->description,
             ]);
 
-            // Simpan gambar
             foreach ($request->file('images') as $image) {
                 $filename = 'listing_' . $listing->id . '_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
                 $path = $image->storeAs('listings', $filename, 'public');
@@ -87,16 +150,14 @@ class ListingController extends Controller
         }
     }
 
-     public function getActiveListings()
+    public function getActiveListings()
     {
         try {
-            // Ambil semua listing yang belum terjual (is_sold = false)
             $listings = Listing::where('is_sold', false)
                 ->with(['images', 'farmer'])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            // Transform data untuk menambahkan full URL gambar
             $listings = $listings->map(function ($listing) {
                 $images = [];
                 if ($listing->images) {
@@ -139,24 +200,20 @@ class ListingController extends Controller
         }
     }
 
-    // 2. GET MY LISTINGS (Index)
     public function index(Request $request)
     {
         try {
             $user = $request->user();
             
-            // Gunakan farmer_id atau user_id sesuai dengan kolom di tabel
-            $listings = Listing::where('farmer_id', $user->id) // atau 'user_id'
+            $listings = Listing::where('farmer_id', $user->id)
                 ->with('images')
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            // Transform data untuk menambahkan full URL gambar
             $listings = $listings->map(function ($listing) {
                 $images = [];
                 if ($listing->images) {
                     $images = $listing->images->map(function ($image) {
-                        // Pastikan URL lengkap
                         $url = $image->image_url;
                         if (!str_starts_with($url, 'http')) {
                             $url = url($image->image_url);
@@ -165,7 +222,6 @@ class ListingController extends Controller
                     })->toArray();
                 }
                 
-                // Return data dalam format yang sesuai dengan Flutter
                 return [
                     'id' => $listing->id,
                     'title' => $listing->title,
@@ -201,15 +257,13 @@ class ListingController extends Controller
         }
     }
 
-    // 3. UPDATE LISTING
     public function update(Request $request, $id)
     {
         try {
             $user = $request->user();
             
-            // Cari listing milik user
             $listing = Listing::where('id', $id)
-                ->where('farmer_id', $user->id) // atau 'user_id'
+                ->where('farmer_id', $user->id)
                 ->firstOrFail();
 
             $validator = Validator::make($request->all(), [
@@ -227,7 +281,6 @@ class ListingController extends Controller
                 ], 422);
             }
 
-            // Update hanya field yang dikirim
             $updateData = [];
             if ($request->has('location')) $updateData['location'] = $request->location;
             if ($request->has('area')) $updateData['area'] = $request->area;
@@ -252,50 +305,6 @@ class ListingController extends Controller
         }
     }
 
-    // 4. MARK AS SOLD
-    public function markAsSold(Request $request, $id)
-    {
-        try {
-            $user = $request->user();
-
-            $validator = Validator::make($request->all(), [
-                'sold_price' => 'required|numeric|min:0'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $listing = Listing::where('id', $id)
-                ->where('farmer_id', $user->id) // atau 'user_id'
-                ->firstOrFail();
-
-            $listing->update([
-                'is_sold' => true,
-                'sold_price' => $request->sold_price
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Listing ditandai sebagai terjual',
-                'data' => $listing->load('images')
-            ], 200);
-
-        } catch (\Exception $e) {
-            \Log::error('Mark as sold failed: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menandai laku: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    // 5. DELETE LISTING (Opsional)
     public function destroy(Request $request, $id)
     {
         try {
@@ -305,13 +314,11 @@ class ListingController extends Controller
                 ->where('farmer_id', $user->id)
                 ->firstOrFail();
 
-            // Hapus gambar dari storage
             foreach ($listing->images as $image) {
                 $path = str_replace('/storage/', '', $image->image_url);
                 Storage::disk('public')->delete($path);
             }
 
-            // Hapus listing (cascade akan hapus images jika diset di migration)
             $listing->delete();
 
             return response()->json([

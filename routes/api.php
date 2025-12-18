@@ -78,3 +78,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/listings/{id}/mark-sold', [ListingController::class, 'markAsSold']);
     Route::delete('/listings/{id}', [ListingController::class, 'destroy']);
 });
+
+Route::middleware('auth:sanctum')->get(
+    '/reviews/{sellerId?}',
+    [TransactionController::class, 'getSellerReviews']
+);

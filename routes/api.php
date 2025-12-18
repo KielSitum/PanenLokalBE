@@ -39,12 +39,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/listings', [ListingController::class, 'store']);
 
     
-    // ✅ Transaction Route
+    // ✅ Transaction Routes (DIPERBAIKI)
     Route::post('/transactions', [TransactionController::class, 'store']);
     Route::get('/transactions', [TransactionController::class, 'index']);
-    Route::put('/transactions/{id}/status', [TransactionController::class, 'updateStatus']);
     Route::get('/farmer/transactions', [TransactionController::class, 'farmerTransactions']);
-    Route::put('/listings/{listingId}/transactions/status', [TransactionController::class, 'updateTransactionsByListing']);
+    Route::put('/transactions/{id}/status', [TransactionController::class, 'updateStatus']);
+    Route::put('/transactions/listing/{listingId}', [TransactionController::class, 'updateTransactionsByListing']); // ⚠️ UBAH INI
     Route::post('/reviews', [TransactionController::class, 'storeReview']);
 
 

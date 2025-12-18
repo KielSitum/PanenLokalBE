@@ -8,7 +8,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\TransactionController; 
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\FavoriteController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -39,15 +40,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/listings', [ListingController::class, 'store']);
 
     
-    // ✅ Transaction Routes (DIPERBAIKI)
+    // ✅ Transaction Routes
     Route::post('/transactions', [TransactionController::class, 'store']);
     Route::get('/transactions', [TransactionController::class, 'index']);
     Route::get('/farmer/transactions', [TransactionController::class, 'farmerTransactions']);
     Route::put('/transactions/{id}/status', [TransactionController::class, 'updateStatus']);
-    Route::put('/transactions/listing/{listingId}', [TransactionController::class, 'updateTransactionsByListing']); // ⚠️ UBAH INI
+    Route::put('/transactions/listing/{listingId}', [TransactionController::class, 'updateTransactionsByListing']);
     Route::post('/reviews', [TransactionController::class, 'storeReview']);
 
-
+    // ✅ Favorite Routes
+    Route::post('/favorites/toggle', [FavoriteController::class, 'toggle']);
+    Route::get('/favorites', [FavoriteController::class, 'index']);
+    Route::get('/favorites/ids', [FavoriteController::class, 'getFavoriteIds']);
+    Route::get('/favorites/check/{listingId}', [FavoriteController::class, 'check']);
+    Route::delete('/favorites/{listingId}', [FavoriteController::class, 'destroy']);
 
     Route::group(['prefix' => 'admin'], function() { 
         Route::get('/verifications/pending', [UserVerificationController::class, 'getPendingSubmissions']);

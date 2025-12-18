@@ -283,4 +283,56 @@ class TransactionController extends Controller
             'message' => 'Ulasan berhasil dikirim'
         ]);
     }
+
+
+    public function getSellerReviews(Request $request, $sellerId = null)
+{
+    $user = $request->user();
+
+    $query = Review::with(['reviewer', 'seller', 'transaction.listing'])
+        ->orderBy('created_at', 'desc');
+
+    // 🌾 FARMER → hanya ulasan ke dirinya
+    if ($user->role === 'farmer') {
+        $query->where('seller_id', $user->id);
+    }
+
+    // 🛡 ADMIN → lihat semua / atau filter seller tertentu
+    if ($user->role === 'admin' && $sellerId) {
+        $query->where('seller_id', $sellerId);
+    }
+
+    $reviews = $query->get()->map(function ($review) {
+        return [
+            'id' => $review->id,
+            'rating' => $review->rating,
+            'comment' => $review->comment,
+            'created_at' => $review->created_at->toDateString(),
+
+            // 👤 Buyer
+            'reviewer' => [
+                'id' => $review->reviewer->id,
+                'full_name' => $review->reviewer->full_name,
+            ],
+
+            // 🌾 Farmer
+            'seller' => [
+                'id' => $review->seller->id,
+                'full_name' => $review->seller->full_name,
+            ],
+
+            // 📦 Produk
+            'item' => [
+                'title' => $review->transaction?->listing?->title ?? '-',
+            ],
+        ];
+    });
+
+    return response()->json([
+        'success' => true,
+        'total' => $reviews->count(),
+        'data' => $reviews,
+    ]);
+}
+
 }

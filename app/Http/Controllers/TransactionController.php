@@ -20,7 +20,10 @@ class TransactionController extends Controller
         $transactions = Transaction::with(['listing.images', 'buyer'])
             ->where('farmer_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($transaction) {
+                return $this->formatTransaction($transaction);
+            });
 
         return response()->json([
             'success' => true,
@@ -35,10 +38,22 @@ class TransactionController extends Controller
     {
         $user = $request->user();
 
-        $transactions = Transaction::with(['listing.images'])
+        $transactions = Transaction::with(['listing.images', 'farmer'])
             ->where('buyer_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($transaction) use ($user) {
+                $formatted = $this->formatTransaction($transaction);
+                
+                // ✅ Check if user already reviewed this transaction
+                $hasReviewed = Review::where('transaction_id', $transaction->id)
+                    ->where('reviewer_id', $user->id)
+                    ->exists();
+                
+                $formatted['has_reviewed'] = $hasReviewed;
+                
+                return $formatted;
+            });
 
         return response()->json([
             'success' => true,
@@ -46,6 +61,59 @@ class TransactionController extends Controller
         ]);
     }
 
+   private function formatTransaction($transaction)
+{
+    $listing = $transaction->listing;
+    
+    return [
+        'id' => $transaction->id,
+        'buyer_id' => $transaction->buyer_id,
+        'farmer_id' => $transaction->farmer_id,
+        'listing_id' => $transaction->listing_id,
+        'status' => $transaction->status,
+        'contacted_at' => $transaction->contacted_at?->toIso8601String(),
+        'completed_at' => $transaction->completed_at?->toIso8601String(),
+        'created_at' => $transaction->created_at->toIso8601String(),
+        'updated_at' => $transaction->updated_at->toIso8601String(),
+        
+        // ✅ Listing info dengan URL LENGKAP
+        'listing' => [
+            'id' => $listing->id,
+            'title' => $listing->title,
+            'price' => (string) $listing->sold_price,
+            'stock' => $listing->stock,
+            'category' => $listing->category,
+            'images' => $listing->images->map(function ($image) {
+                // ✅ PENTING: Return URL lengkap dengan domain
+                return [
+                    'id' => $image->id,
+                    'url' => $image->url 
+                        ? (str_starts_with($image->url, 'http') 
+                            ? $image->url 
+                            : url($image->url)) // ✅ Tambah domain jika relatif
+                        : ($image->image_url 
+                            ? (str_starts_with($image->image_url, 'http')
+                                ? $image->image_url
+                                : url($image->image_url))
+                            : null),
+                ];
+            })->filter(fn($img) => $img['url'] !== null)->values(), // ✅ Filter null
+        ],
+        
+        // Buyer & Farmer info
+        'buyer' => $transaction->buyer ? [
+            'id' => $transaction->buyer->id,
+            'name' => $transaction->buyer->full_name,
+            'phone' => $transaction->buyer->phone,
+        ] : null,
+        
+        'farmer' => $transaction->farmer ? [
+            'id' => $transaction->farmer->id,
+            'name' => $transaction->farmer->full_name,
+            'phone' => $transaction->farmer->phone,
+        ] : null,
+    ];
+}
     /**
      * ✅ Create new transaction (when buyer contacts farmer)
      */
@@ -80,10 +148,12 @@ class TransactionController extends Controller
             'contacted_at' => now(),
         ]);
 
+        $transaction->load(['listing.images', 'farmer']);
+
         return response()->json([
             'success' => true,
             'message' => 'Transaksi berhasil dibuat',
-            'data' => $transaction
+            'data' => $this->formatTransaction($transaction)
         ], 201);
     }
 
@@ -122,7 +192,7 @@ class TransactionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Status transaksi berhasil diperbarui',
-            'data' => $transaction
+            'data' => $this->formatTransaction($transaction)
         ]);
     }
 
@@ -178,8 +248,11 @@ class TransactionController extends Controller
             ], 403);
         }
 
-        // Check if review already exists
-        $existingReview = Review::where('transaction_id', $transaction->id)->first();
+        // ✅ Check if review already exists
+        $existingReview = Review::where('transaction_id', $transaction->id)
+            ->where('reviewer_id', $user->id)
+            ->first();
+            
         if ($existingReview) {
             return response()->json([
                 'success' => false,

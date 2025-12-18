@@ -9,6 +9,37 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+
+    public function resetPassword(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+        'new_password' => 'required|min:6'
+    ]);
+
+    $email = $request->email;
+    $newPassword = $request->new_password;
+
+    // Cari user berdasarkan email
+    $user = User::where('email', $email)->first();
+
+    if (!$user) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Email tidak terdaftar'
+        ], 404);
+    }
+
+    // Update password
+    $user->password = Hash::make($newPassword);
+    $user->save();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Password berhasil diubah'
+    ], 200);
+}
+
 public function register(Request $request)
     {
         $request->validate([

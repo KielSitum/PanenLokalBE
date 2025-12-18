@@ -13,7 +13,7 @@ use App\Http\Controllers\TransactionController;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
-
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/user', [AuthController::class, 'user'])->middleware('auth:sanctum');
